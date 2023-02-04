@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64-Tool</title>
+</head>
+<body>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            background: #1f1f1f;
+            color: #e6e6e6;
+            font-family: sans-serif;
+        }
+        a {
+            color: #e6e6e6;
+        }
+        .config {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+        .config h1 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+        .inout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            color: #e6e6e6;
+            margin: .5rem;
+            gap: .5rem;
+        }
+        .inout textarea {
+            width: 100%;
+            flex-grow: 1;
+            resize: none;
+            box-sizing: border-box;
+            background: transparent;
+            outline: none;
+            border: 1px solid #303030;
+            background: #30303090;
+            border-radius: .5rem;
+            color: #e6e6e6;
+            padding: .5rem;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .help-container {
+            z-index: 10;
+            position: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .help {
+            margin-top: -5rem;
+            max-width: 45rem;
+        }
+        .help .content {
+            padding: .5rem 1rem;
+            padding-top: 1.5rem;
+            background: #40404090;
+            border: 1px solid #404040;
+            border-radius: .5rem;
+            backdrop-filter: blur(16px);
+        }
+        #show-help-btn {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        #hide-help-btn {
+            z-index: 1;
+            position: absolute;
+            cursor: pointer;
+            fill: #e6e6e6;
+            width: 1rem;
+            height: 1rem;
+            margin-left: .6rem;
+            margin-top: .6rem;
+        }
+        @media only screen and (max-width: 700px) {
+            body {
+                flex-direction: column;
+            }
+            .help {
+                max-width: 90%;
+            }
+        }
+    </style>
+    <div class="help-container hidden" id="help">
+        <div class="help">
+            <svg id="hide-help-btn" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 96 96" enable-background="new 0 0 96 96" xml:space="preserve">
+                <polygon points="96,14 82,0 48,34 14,0 0,14 34,48 0,82 14,96 48,62 82,96 96,82 62,48 "/>
+            </svg>
+            <div class="content">
+                <p>This tool can encode and decode Base64 data.</p>
+                <p>Configuration:</p>
+                <ul>
+                    <li>encode/decode: Choose wether you want to decode or encode data</li>
+                    <li>hexadecimal: When encoding, the input will be seen as binary data; when decoding, the output data will be displayed in its hexadecimal representation</li>
+                    <li>urlsafe: Use the Urlsafe Base64 alphabet</li>
+                </ul>
+                <p>The tool completely runs in your browser without any external dependency or API needed. You could simply Ctrl+S to download it, and open the file with your browser.</p>
+                <p>&copy; 2023 <a href="https://w13r.net">Julian Müller (W13R)</a></p>
+            </div>
+        </div>
+    </div>
+    <div class="config">
+        <h1>Config</h1>
+        <div>
+            <input type="radio" id="config-encode" name="encodeordecode" checked>
+            <label for="config-encode">encode</label>
+            <input type="radio" id="config-decode" name="encodeordecode">
+            <label for="config-decode">decode</label>
+        </div>
+        <div>
+            <input type="checkbox" id="config-hex">
+            <label for="config-hex">hexadecimal</label>
+        </div>
+        <div>
+            <input type="checkbox" id="config-urlsafe">
+            <label for="config-urlsafe">urlsafe</label>
+        </div>
+        <a id="show-help-btn">help</a>
+    </div>
+    <div class="inout">
+        <textarea id="in" cols="30" rows="10" placeholder="input"></textarea>
+        <textarea id="out" cols="30" rows="10" readonly placeholder="output"></textarea>
+    </div>
+    <script>
+        (() => {
+            // Elements
+            let encodeConfigElement = document.getElementById("config-encode");
+            let decodeConfigElement = document.getElementById("config-decode");
+            let hexConfigElement = document.getElementById("config-hex");
+            let urlsafeConfigElement = document.getElementById("config-urlsafe");
+            let inDataElement = document.getElementById("in");
+            let outDataElement = document.getElementById("out");
+            let showHelpBtnElement = document.getElementById("show-help-btn");
+            let hideHelpBtnElement = document.getElementById("hide-help-btn");
+            let helpContainerElement = document.getElementById("help");
+            // Help
+            function hideHelp() {
+                helpContainerElement.classList.add("hidden");
+            }
+            function showHelp() {
+                helpContainerElement.classList.remove("hidden");
+            }
+            showHelpBtnElement.onclick = showHelp;
+            hideHelpBtnElement.onclick = hideHelp;
+            // Config
+            let encode = true;
+            let useHex = false;
+            let urlsafe = false;
+            function getConfig() {
+                encode = encodeConfigElement.checked;
+                console.log("encode", encode);
+                useHex = hexConfigElement.checked;
+                console.log("useHex", useHex);
+                urlsafe = urlsafeConfigElement.checked;
+                console.log("urlsafe", urlsafe);
+            }
+            encodeConfigElement.oninput = () => {getConfig(); generate();};
+            decodeConfigElement.oninput = () => {getConfig(); generate();};
+            hexConfigElement.oninput = () => {getConfig(); generate();};
+            urlsafeConfigElement.oninput = () => {getConfig(); generate();};
+            // Helper functions, written with help from ChatGPT
+            const hexAlphabet = "0123456789abcdef";
+            function hexToBase64(hex) {
+                // Filter out all non-hex chars
+                hex = hex.toLowerCase();
+                let hexFiltered = "";
+                for (let i = 0; i < hex.length; i++) {
+                    if (hexAlphabet.indexOf(hex[i]) !== -1) {
+                        hexFiltered += hex[i];
+                    }
+                }
+                // Generate Base64
+                let bin = '';
+                for (let i = 0; i < hexFiltered.length; i += 2) {
+                    bin += String.fromCharCode(parseInt(hexFiltered.substr(i, 2), 16));
+                }
+                return btoa(bin);
+            }
+            function base64ToHex(base64) {
+                let bin = atob(base64), hex = '';
+                for (let i = 0; i < bin.length; i++) {
+                    let n = bin.charCodeAt(i).toString(16);
+                    hex += (n.length === 1 ? '0' : '') + n;
+                }
+                return hex;
+            }
+            function encodeUrlsafe(base64) {
+                return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            }
+            function decodeUrlsafe(base64Url) {
+                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                return base64;
+            }
+            // Main logic
+            function generate() {
+                let inData = inDataElement.value;
+                let result = "";
+                if (!encode && urlsafe) {
+                    inData = decodeUrlsafe(inData);
+                }
+                if (encode && !useHex) {
+                    result = btoa(inData);
+                }
+                else if (encode && useHex) {
+                    result = hexToBase64(inData);
+                }
+                else if (!useHex) {
+                    result = atob(inData);
+                }
+                else {
+                    result = base64ToHex(inData);
+                }
+                if (encode && urlsafe) {
+                    result = encodeUrlsafe(result);
+                }
+                outDataElement.value = result;
+            }
+            inDataElement.oninput = () => {
+                generate();
+            }
+            // Get config initially
+            getConfig();
+        })()
+    </script>
+</body>
+</html>
